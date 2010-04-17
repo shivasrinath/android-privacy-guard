@@ -362,7 +362,7 @@ public class PublicKeyListActivity extends ExpandableListActivity
                     alert.setTitle("Export Keys");
                     mSelectedItem = -1;
                 }
-                final int thisDialogId = (singleKeyExport ? DIALOG_DELETE_KEY : DIALOG_EXPORT_KEYS);
+                final int thisDialogId = (singleKeyExport ? DIALOG_EXPORT_KEY : DIALOG_EXPORT_KEYS);
                 alert.setMessage("Please specify which file to export to.\n" +
                                  "WARNING! File will be overwritten if it exists.");
 
