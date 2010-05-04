@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2010 Thialfihar <thi@thialfihar.org>
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+
+<resources>
+    <string name="app_name">APG</string>
+    <string name="title_mailInbox">Mail Inbox</string>
+    <string name="title_managePublicKeys">Manage Public Keys</string>
+    <string name="title_manageSecretKeys">Manage Secret Keys</string>
+    <string name="title_selectRecipients">Select Recipients</string>
+    <string name="title_selectSignature">Select Signature</string>
+    <string name="title_encryptMessage">Encrypt Message</string>
+    <string name="title_decryptMessage">Decrypt Message</string>
+    <string name="title_encryptFile">Encrypt File</string>
+    <string name="title_decryptFile">Decrypt File</string>
+    <string name="title_authentification">Authentification</string>
+    <string name="title_createKey">Create Key</string>
+    <string name="title_editKey">Edit Key</string>
+    <string name="title_preferences">Preferences</string>
+
+    <string name="section_userIds">User IDs</string>
+    <string name="section_keys">Keys</string>
+
+    <string name="btn_send">Send via Email</string>
+    <string name="btn_encrypt">Encrypt</string>
+    <string name="btn_decrypt">Decrypt</string>
+    <string name="btn_verify">Verify</string>
+    <string name="btn_selectEncryptKeys">Select Recipients</string>
+    <string name="btn_reply">Reply</string>
+    <string name="btn_encryptMessage">Encrypt Message</string>
+    <string name="btn_decryptMessage">Decrypt Message</string>
+    <string name="btn_encryptFile">Encrypt File</string>
+    <string name="btn_decryptFile">Decrypt File</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_doNotSave">Cancel</string>
+
+    <string name="menu_about">About</string>
+    <string name="menu_addAccount">Add GMail Account</string>
+    <string name="menu_managePublicKeys">Manage Public Keys</string>
+    <string name="menu_manageSecretKeys">Manage Secret Keys</string>
+    <string name="menu_preferences">Settings</string>
+
+    <string name="no_keys_selected">Select</string>
+    <string name="one_key_selected">1 Selected</string>
+    <string name="n_keys_selected">Selected</string>
+    <string name="unknown_user_id">&lt;unknown&gt;</string>
+    <string name="none">&lt;none&gt;</string>
+
+    <string name="label_sign">Sign</string>
+    <string name="label_file">File</string>
+    <string name="label_pass_phrase">Pass Phrase</string>
+    <string name="label_pass_phrase_again">Again</string>
+    <string name="label_algorithm">Algorithm</string>
+    <string name="label_ascii_armour">ASCII Armour</string>
+    <string name="label_select_public_keys">Public Key(s)</string>
+    <string name="label_delete_after_encryption">Delete After Encryption</string>
+    <string name="label_delete_after_decryption">Delete After Decryption</string>
+    <string name="label_encryption_algorithm">Encryption Algorithm</string>
+    <string name="label_hash_algorithm">Hash Algorithm</string>
+
+    <string name="use_asymmetric">Public Key</string>
+    <string name="use_symmetric">Pass Phrase</string>
+
+    <string name="section_defaults">Defaults</string>
+
+    <string name="sign_only">Sign only</string>
+    <string name="encrypt_only">Encrypt only</string>
+    <string name="sign_and_encrypt">Sign and Encrypt</string>
+
+    <string name="dsa">DSA</string>
+    <string name="elgamal">ElGamal</string>
+    <string name="rsa">RSA</string>
+
+    <string name="wrong_pass_phrase">Wrong pass phrase.</string>
+    <string name="using_clipboard_content">Using clipboard content.</string>
+    <string name="key_saved">Key saved.</string>
+    <string name="set_a_pass_phrase">Set a pass phrase via the option menu first.</string>
+
+    <string name="no_filemanager_installed">OI File Manager not installed.</string>
+    <string name="filemanager_title_open">Open...</string>
+    <string name="filemanager_btn_open">Open</string>
+    <string name="filemanager_title_save">Save As...</string>
+    <string name="filemanager_btn_save">Save</string>
+
+</resources>
+
