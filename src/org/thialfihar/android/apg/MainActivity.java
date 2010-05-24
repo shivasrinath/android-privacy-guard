@@ -16,6 +16,8 @@
 
 package org.thialfihar.android.apg;
 
+import java.util.regex.Pattern;
+
 import org.thialfihar.android.apg.provider.Accounts;
 
 import android.app.AlertDialog;
@@ -136,17 +138,32 @@ public class MainActivity extends BaseActivity {
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 MainActivity.this.removeDialog(Id.dialog.new_account);
-                                String accountName = "" + input.getText();
+                                String accountName = Pattern.compile("[ \n]+")
+                                            .matcher("" + input.getText()).replaceAll("");
 
-                                Cursor testCursor =
-                                        managedQuery(Uri.parse("content://gmail-ls/conversations/" +
-                                                               accountName),
+                                Cursor testCursor = null;
+                                String error = null;
+                                try {
+                                    if (accountName.length() == 0) {
+                                        error = getString(R.string.error_invalidAccount,
+                                                          accountName);
+                                    } else {
+                                        testCursor =
+                                            managedQuery(Uri.parse("content://gmail-ls/conversations/" +
+                                                                   accountName),
                                                      null, null, null, null);
-                                if (testCursor == null) {
+                                        if (testCursor == null || !testCursor.moveToFirst()) {
+                                            error = getString(R.string.error_accountNotFound,
+                                                              accountName);
+                                        }
+                                    }
+                                } catch (IllegalArgumentException e) {
+                                    error = getString(R.string.error_invalidAccount, accountName);
+                                }
+
+                                if (error != null) {
                                     Toast.makeText(MainActivity.this,
-                                                   getString(R.string.errorMessage,
-                                                             getString(R.string.error_accountNotFound,
-                                                                       accountName)),
+                                                   getString(R.string.errorMessage, error),
                                                    Toast.LENGTH_SHORT).show();
                                     return;
                                 }
@@ -155,8 +172,7 @@ public class MainActivity extends BaseActivity {
                                 values.put(Accounts.NAME, accountName);
                                 try {
                                     MainActivity.this.getContentResolver()
-                                                     .insert(Accounts.CONTENT_URI,
-                                                             values);
+                                                     .insert(Accounts.CONTENT_URI, values);
                                 } catch (SQLException e) {
                                     Toast.makeText(MainActivity.this,
                                                    getString(R.string.errorMessage,
