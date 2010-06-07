@@ -79,6 +79,7 @@ import org.bouncycastle2.openpgp.PGPSignatureList;
 import org.bouncycastle2.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle2.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle2.openpgp.PGPUtil;
+import org.thialfihar.android.apg.provider.DataProvider;
 import org.thialfihar.android.apg.provider.Database;
 import org.thialfihar.android.apg.provider.KeyRings;
 import org.thialfihar.android.apg.provider.Keys;
@@ -92,6 +93,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.ViewGroup;
@@ -106,8 +108,10 @@ public class Apg {
         public static final String ENCRYPT_AND_RETURN = "org.thialfihar.android.apg.intent.ENCRYPT_AND_RETURN";
         public static final String SELECT_PUBLIC_KEYS = "org.thialfihar.android.apg.intent.SELECT_PUBLIC_KEYS";
         public static final String SELECT_SECRET_KEY = "org.thialfihar.android.apg.intent.SELECT_SECRET_KEY";
+        public static final String IMPORT = "org.thialfihar.android.apg.intent.IMPORT";
     }
 
+    public static final String EXTRA_TEXT = "text";
     public static final String EXTRA_DATA = "data";
     public static final String EXTRA_STATUS = "status";
     public static final String EXTRA_ERROR = "error";
@@ -129,6 +133,22 @@ public class Apg {
     public static final String EXTRA_PROGRESS = "progress";
     public static final String EXTRA_MAX = "max";
     public static final String EXTRA_ACCOUNT = "account";
+
+    public static final String AUTHORITY = DataProvider.AUTHORITY;
+
+    public static final Uri CONTENT_URI_SECRET_KEY_RINGS =
+            Uri.parse("content://" + AUTHORITY + "/key_rings/secret/");
+    public static final Uri CONTENT_URI_SECRET_KEY_RING_BY_KEY_ID =
+            Uri.parse("content://" + AUTHORITY + "/key_rings/secret/key_id/");
+    public static final Uri CONTENT_URI_SECRET_KEY_RING_BY_EMAILS =
+            Uri.parse("content://" + AUTHORITY + "/key_rings/secret/emails/");
+
+    public static final Uri CONTENT_URI_PUBLIC_KEY_RINGS =
+            Uri.parse("content://" + AUTHORITY + "/key_rings/public/");
+    public static final Uri CONTENT_URI_PUBLIC_KEY_RING_BY_KEY_ID =
+            Uri.parse("content://" + AUTHORITY + "/key_rings/public/key_id/");
+    public static final Uri CONTENT_URI_PUBLIC_KEY_RING_BY_EMAILS =
+            Uri.parse("content://" + AUTHORITY + "/key_rings/public/emails/");
 
     public static String VERSION = "1.0.2";
     public static String FULL_VERSION = "APG v" + VERSION;
@@ -554,7 +574,8 @@ public class Apg {
         progress.setProgress(R.string.progress_done, 100, 100);
     }
 
-    public static Bundle importKeyRings(Activity context, int type, String filename,
+    public static Bundle importKeyRings(Activity context, int type,
+                                        InputStream inStream, long dataLength,
                                         ProgressDialogUpdater progress)
             throws GeneralException, FileNotFoundException, PGPException, IOException {
         Bundle returnData = new Bundle();
@@ -569,9 +590,7 @@ public class Apg {
             throw new GeneralException(context.getString(R.string.error_externalStorageNotReady));
         }
 
-        FileInputStream fileIn = new FileInputStream(filename);
-        long fileSize = new File(filename).length();
-        PositionAwareInputStream progressIn = new PositionAwareInputStream(fileIn);
+        PositionAwareInputStream progressIn = new PositionAwareInputStream(inStream);
         // need to have access to the bufferedInput, so we can reuse it for the possible
         // PGPObject chunks after the first one, e.g. files with several consecutive ASCII
         // armour blocks
@@ -617,7 +636,7 @@ public class Apg {
                     } else if (retValue == Id.return_value.ok) {
                         ++newKeys;
                     }
-                    progress.setProgress((int)(100 * progressIn.position() / fileSize), 100);
+                    progress.setProgress((int)(100 * progressIn.position() / dataLength), 100);
                     obj = objectFactory.nextObject();
                 }
             }
@@ -634,7 +653,7 @@ public class Apg {
     }
 
     public static Bundle exportKeyRings(Activity context, Vector<Integer> keyRingIds,
-                                        String filename,
+                                        OutputStream outStream,
                                         ProgressDialogUpdater progress)
             throws GeneralException, FileNotFoundException, PGPException, IOException {
         Bundle returnData = new Bundle();
@@ -648,8 +667,7 @@ public class Apg {
         if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             throw new GeneralException(context.getString(R.string.error_externalStorageNotReady));
         }
-        FileOutputStream fileOut = new FileOutputStream(new File(filename), false);
-        ArmoredOutputStream out = new ArmoredOutputStream(fileOut);
+        ArmoredOutputStream out = new ArmoredOutputStream(outStream);
 
         int numKeys = 0;
         for (int i = 0; i < keyRingIds.size(); ++i) {
@@ -670,7 +688,6 @@ public class Apg {
             ++numKeys;
         }
         out.close();
-        fileOut.close();
         returnData.putInt("exported", numKeys);
 
         progress.setProgress(R.string.progress_done, 100, 100);
@@ -1686,6 +1703,23 @@ public class Apg {
 
         progress.setProgress(R.string.progress_done, 100, 100);
         return returnData;
+    }
+
+    public static int getStreamContent(Context context, InputStream inStream)
+            throws IOException {
+        InputStream in = PGPUtil.getDecoderStream(inStream);
+        PGPObjectFactory pgpF = new PGPObjectFactory(in);
+        Object object = pgpF.nextObject();
+        while (object != null) {
+            if (object instanceof PGPPublicKeyRing ||
+                object instanceof PGPSecretKeyRing) {
+                return Id.content.keys;
+            } else if (object instanceof PGPEncryptedDataList) {
+                return Id.content.encrypted_data;
+            }
+        }
+
+        return Id.content.unknown;
     }
 
     // taken from ClearSignedFileProcessor in BC

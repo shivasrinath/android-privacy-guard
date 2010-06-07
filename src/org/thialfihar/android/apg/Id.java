@@ -33,6 +33,7 @@ public final class Id {
             public static final int import_keys = 0x21070006;
             public static final int export_keys = 0x21070007;
             public static final int preferences = 0x21070008;
+            public static final int search = 0x21070009;
         }
     }
 
@@ -111,6 +112,13 @@ public final class Id {
             public static final int encrypt_only = 0x21070002;
             public static final int sign_and_encrypt = 0x21070003;
         }
+
+        public static final class action {
+            public static final int encrypt = 0x21070001;
+            public static final int decrypt = 0x21070002;
+            public static final int import_public = 0x21070003;
+            public static final int import_secret = 0x21070004;
+        }
     }
 
     public static final class return_value {
@@ -130,5 +138,11 @@ public final class Id {
     public static final class key {
         public static final int none = 0;
         public static final int symmetric = -1;
+    }
+
+    public static final class content {
+        public static final int unknown = 0;
+        public static final int encrypted_data = 1;
+        public static final int keys = 2;
     }
 }

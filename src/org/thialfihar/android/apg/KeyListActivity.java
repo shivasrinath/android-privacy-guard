@@ -16,8 +16,14 @@
 
 package org.thialfihar.android.apg;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Vector;
 
 import org.bouncycastle2.openpgp.PGPException;
@@ -29,11 +35,13 @@ import org.thialfihar.android.apg.provider.UserIds;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Message;
@@ -41,7 +49,9 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.View.OnClickListener;
 import android.widget.BaseExpandableListAdapter;
+import android.widget.Button;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -51,12 +61,17 @@ import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
 public class KeyListActivity extends BaseActivity {
     protected ExpandableListView mList;
     protected KeyListAdapter mListAdapter;
+    protected View mFilterLayout;
+    protected Button mClearFilterButton;
+    protected TextView mFilterInfo;
 
     protected int mSelectedItem = -1;
     protected int mTask = 0;
 
     protected String mImportFilename = Constants.path.app_dir + "/";
     protected String mExportFilename = Constants.path.app_dir + "/";
+
+    protected String mImportData;
 
     protected int mKeyType = Id.type.public_key;
 
@@ -65,10 +80,62 @@ public class KeyListActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.key_list);
 
+        setDefaultKeyMode(DEFAULT_KEYS_SEARCH_LOCAL);
+
         mList = (ExpandableListView) findViewById(R.id.list);
-        mListAdapter = new KeyListAdapter(this);
-        mList.setAdapter(mListAdapter);
         registerForContextMenu(mList);
+
+        mFilterLayout = (View) findViewById(R.id.layout_filter);
+        mFilterInfo = (TextView) mFilterLayout.findViewById(R.id.filterInfo);
+        mClearFilterButton = (Button) mFilterLayout.findViewById(R.id.btn_clear);
+
+        mClearFilterButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                handleIntent(new Intent());
+            }
+        });
+
+        handleIntent(getIntent());
+
+        Intent intent = getIntent();
+        if (Apg.Intent.IMPORT.equals(intent.getAction())) {
+            if ("file".equals(intent.getScheme()) && intent.getDataString() != null) {
+                mImportFilename = intent.getDataString().replace("file://", "");
+            } else {
+                mImportData = intent.getStringExtra(Apg.EXTRA_TEXT);
+            }
+            importKeys();
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        String searchString = null;
+        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            searchString = intent.getStringExtra(SearchManager.QUERY);
+            if (searchString != null && searchString.trim().length() == 0) {
+                searchString = null;
+            }
+        }
+
+        if (searchString == null) {
+            mFilterLayout.setVisibility(View.GONE);
+        } else {
+            mFilterLayout.setVisibility(View.VISIBLE);
+            mFilterInfo.setText(getString(R.string.filterInfo, searchString));
+        }
+
+        if (mListAdapter != null) {
+            mListAdapter.cleanup();
+        }
+        mListAdapter = new KeyListAdapter(this, searchString);
+        mList.setAdapter(mListAdapter);
     }
 
     @Override
@@ -242,16 +309,26 @@ public class KeyListActivity extends BaseActivity {
         Bundle data = new Bundle();
         Message msg = new Message();
 
-        String filename = null;
-        if (mTask == Id.task.import_keys) {
-            filename = mImportFilename;
-        } else {
-            filename = mExportFilename;
-        }
-
         try {
+            InputStream importInputStream = null;
+            OutputStream exportOutputStream = null;
+            long size = 0;
             if (mTask == Id.task.import_keys) {
-                data = Apg.importKeyRings(this, mKeyType, filename, this);
+                if (mImportData != null) {
+                    byte[] bytes = mImportData.getBytes();
+                    size = bytes.length;
+                    importInputStream = new ByteArrayInputStream(bytes);
+                } else {
+                    File file = new File(mImportFilename);
+                    size = file.length();
+                    importInputStream = new FileInputStream(file);
+                }
+            } else {
+                exportOutputStream = new FileOutputStream(mExportFilename);
+            }
+
+            if (mTask == Id.task.import_keys) {
+                data = Apg.importKeyRings(this, mKeyType, importInputStream, size, this);
             } else {
                 Vector<Integer> keyRingIds = new Vector<Integer>();
                 if (mSelectedItem == -1) {
@@ -263,7 +340,7 @@ public class KeyListActivity extends BaseActivity {
                     keyRingIds.add(keyRingId);
                     mSelectedItem = -1;
                 }
-                data = Apg.exportKeyRings(this, keyRingIds, filename, this);
+                data = Apg.exportKeyRings(this, keyRingIds, exportOutputStream, this);
             }
         } catch (FileNotFoundException e) {
             error = getString(R.string.error_fileNotFound);
@@ -274,6 +351,8 @@ public class KeyListActivity extends BaseActivity {
         } catch (Apg.GeneralException e) {
             error = "" + e;
         }
+
+        mImportData = null;
 
         if (mTask == Id.task.import_keys) {
             data.putInt(Apg.EXTRA_STATUS, Id.message.import_done);
@@ -371,6 +450,7 @@ public class KeyListActivity extends BaseActivity {
         private Vector<Vector<KeyChild>> mChildren;
         private SQLiteDatabase mDatabase;
         private Cursor mCursor;
+        private String mSearchString;
 
         private class KeyChild {
             public static final int KEY = 0;
@@ -401,11 +481,13 @@ public class KeyListActivity extends BaseActivity {
             }
         }
 
-        public KeyListAdapter(Context context) {
+        public KeyListAdapter(Context context, String searchString) {
+            mSearchString = searchString;
+
             mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             mDatabase = Apg.getDatabase().db();
-            mCursor = mDatabase.query(
-                    KeyRings.TABLE_NAME + " INNER JOIN " + Keys.TABLE_NAME + " ON " +
+            SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+            qb.setTables(KeyRings.TABLE_NAME + " INNER JOIN " + Keys.TABLE_NAME + " ON " +
                                           "(" + KeyRings.TABLE_NAME + "." + KeyRings._ID + " = " +
                                           Keys.TABLE_NAME + "." + Keys.KEY_RING_ID + " AND " +
                                           Keys.TABLE_NAME + "." + Keys.IS_MASTER_KEY + " = '1'" +
@@ -413,7 +495,32 @@ public class KeyListActivity extends BaseActivity {
                                           " INNER JOIN " + UserIds.TABLE_NAME + " ON " +
                                           "(" + Keys.TABLE_NAME + "." + Keys._ID + " = " +
                                           UserIds.TABLE_NAME + "." + UserIds.KEY_ID + " AND " +
-                                          UserIds.TABLE_NAME + "." + UserIds.RANK + " = '0') ",
+                                          UserIds.TABLE_NAME + "." + UserIds.RANK + " = '0')");
+
+            if (searchString != null && searchString.trim().length() > 0) {
+                String[] chunks = searchString.trim().split(" +");
+                qb.appendWhere("EXISTS (SELECT tmp." + UserIds._ID + " FROM " +
+                                        UserIds.TABLE_NAME + " AS tmp WHERE " +
+                                        "tmp." + UserIds.KEY_ID + " = " +
+                                        Keys.TABLE_NAME + "." + Keys._ID);
+                for (int i = 0; i < chunks.length; ++i) {
+                    qb.appendWhere(" AND tmp." + UserIds.USER_ID + " LIKE ");
+                    qb.appendWhereEscapeString("%" + chunks[i] + "%");
+                }
+                qb.appendWhere(")");
+            }
+
+            String query = qb.buildQuery(new String[] {
+                        KeyRings.TABLE_NAME + "." + KeyRings._ID,           // 0
+                        KeyRings.TABLE_NAME + "." + KeyRings.MASTER_KEY_ID, // 1
+                        UserIds.TABLE_NAME + "." + UserIds.USER_ID,         // 2
+                    },
+                    KeyRings.TABLE_NAME + "." + KeyRings.TYPE + " = ?",
+                    new String[] { "" + (mKeyType == Id.type.public_key ?
+                                             Id.database.type_public : Id.database.type_secret) },
+                    null, null, UserIds.TABLE_NAME + "." + UserIds.USER_ID + " ASC", null);
+
+            mCursor = qb.query(mDatabase,
                     new String[] {
                         KeyRings.TABLE_NAME + "." + KeyRings._ID,           // 0
                         KeyRings.TABLE_NAME + "." + KeyRings.MASTER_KEY_ID, // 1
@@ -424,8 +531,31 @@ public class KeyListActivity extends BaseActivity {
                                              Id.database.type_public : Id.database.type_secret) },
                     null, null, UserIds.TABLE_NAME + "." + UserIds.USER_ID + " ASC");
 
+            // content provider way for reference, might have to go back to it sometime:
+            /*Uri contentUri = null;
+            if (mKeyType == Id.type.secret_key) {
+                contentUri = Apg.CONTENT_URI_SECRET_KEY_RINGS;
+            } else {
+                contentUri = Apg.CONTENT_URI_PUBLIC_KEY_RINGS;
+            }
+            mCursor = getContentResolver().query(
+                    contentUri,
+                    new String[] {
+                        DataProvider._ID,           // 0
+                        DataProvider.MASTER_KEY_ID, // 1
+                        DataProvider.USER_ID,       // 2
+                    },
+                    null, null, null);*/
+
             startManagingCursor(mCursor);
             rebuild(false);
+        }
+
+        public void cleanup() {
+            if (mCursor != null) {
+                stopManagingCursor(mCursor);
+                mCursor.close();
+            }
         }
 
         public void rebuild(boolean requery) {

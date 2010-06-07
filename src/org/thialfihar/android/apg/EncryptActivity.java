@@ -279,7 +279,7 @@ public class EncryptActivity extends BaseActivity {
                 mReturnResult = true;
             }
 
-            String data = extras.getString(Apg.EXTRA_DATA);
+            String data = extras.getString(Apg.EXTRA_TEXT);
             mSendTo = extras.getString(Apg.EXTRA_SEND_TO);
             mSubject = extras.getString(Apg.EXTRA_SUBJECT);
             long signatureKeyId = extras.getLong(Apg.EXTRA_SIGNATURE_KEY_ID);
@@ -335,6 +335,11 @@ public class EncryptActivity extends BaseActivity {
                     mSource.showNext();
                 }
             } else if (Apg.Intent.ENCRYPT_FILE.equals(mIntent.getAction())) {
+                if ("file".equals(mIntent.getScheme())) {
+                    mInputFilename = mIntent.getDataString().replace("file://", "");
+                    mFilename.setText(mInputFilename);
+                    guessOutputFilename();
+                }
                 mSource.setInAnimation(null);
                 mSource.setOutAnimation(null);
                 while (mSource.getCurrentView().getId() != R.id.sourceFile) {
@@ -403,6 +408,7 @@ public class EncryptActivity extends BaseActivity {
                 mSourceLabel.setText(R.string.label_file);
                 mEncryptButton.setText(R.string.btn_encrypt);
                 mEncryptToClipboardButton.setEnabled(false);
+                mEncryptToClipboardButton.setVisibility(View.INVISIBLE);
                 break;
             }
 
@@ -410,6 +416,7 @@ public class EncryptActivity extends BaseActivity {
                 mSourceLabel.setText(R.string.label_message);
                 mEncryptButton.setText(R.string.btn_send);
                 mEncryptToClipboardButton.setEnabled(true);
+                mEncryptToClipboardButton.setVisibility(View.VISIBLE);
                 break;
             }
 
@@ -613,8 +620,8 @@ public class EncryptActivity extends BaseActivity {
 
             out.close();
             if (mEncryptTarget != Id.target.file) {
-                data.putByteArray(Apg.EXTRA_ENCRYPTED_MESSAGE,
-                                  ((ByteArrayOutputStream)out).toByteArray());
+                data.putString(Apg.EXTRA_ENCRYPTED_MESSAGE,
+                               new String(((ByteArrayOutputStream)out).toByteArray()));
             }
         } catch (IOException e) {
             error = "" + e;
@@ -677,7 +684,23 @@ public class EncryptActivity extends BaseActivity {
 
     private void selectPublicKeys() {
         Intent intent = new Intent(this, SelectPublicKeyListActivity.class);
-        intent.putExtra(Apg.EXTRA_SELECTION, mEncryptionKeyIds);
+        Vector<Long> keyIds = new Vector<Long>();
+        if (getSecretKeyId() != 0) {
+            keyIds.add(getSecretKeyId());
+        }
+        if (mEncryptionKeyIds != null && mEncryptionKeyIds.length > 0) {
+            for (int i = 0; i < mEncryptionKeyIds.length; ++i) {
+                keyIds.add(mEncryptionKeyIds[i]);
+            }
+        }
+        long [] initialKeyIds = null;
+        if (keyIds.size() > 0) {
+            initialKeyIds = new long[keyIds.size()];
+            for (int i = 0; i < keyIds.size(); ++i) {
+                initialKeyIds[i] = keyIds.get(i);
+            }
+        }
+        intent.putExtra(Apg.EXTRA_SELECTION, initialKeyIds);
         startActivityForResult(intent, Id.request.public_keys);
     }
 
@@ -763,7 +786,7 @@ public class EncryptActivity extends BaseActivity {
         }
         switch (mEncryptTarget) {
             case Id.target.clipboard: {
-                String message = new String(data.getByteArray(Apg.EXTRA_ENCRYPTED_MESSAGE));
+                String message = data.getString(Apg.EXTRA_ENCRYPTED_MESSAGE);
                 ClipboardManager clip = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
                 clip.setText(message);
                 Toast.makeText(this, R.string.encryptionToClipboardSuccessful,
@@ -780,7 +803,7 @@ public class EncryptActivity extends BaseActivity {
                     return;
                 }
 
-                String message = new String(data.getByteArray(Apg.EXTRA_ENCRYPTED_MESSAGE));
+                String message = data.getString(Apg.EXTRA_ENCRYPTED_MESSAGE);
                 Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
                 emailIntent.setType("text/plain; charset=utf-8");
                 emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, message);
