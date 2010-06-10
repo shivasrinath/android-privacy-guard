@@ -1131,7 +1131,7 @@ public class Apg {
         OutputStream encryptOut = null;
         if (armored) {
             armorOut = new ArmoredOutputStream(outStream);
-            armorOut.setHeader("Version", FULL_VERSION);
+            armorOut.setHeader("Version", getFullVersion(context));
             out = armorOut;
         } else {
             out = outStream;
@@ -1251,7 +1251,7 @@ public class Apg {
         Security.addProvider(new BouncyCastleProvider());
 
         ArmoredOutputStream armorOut = new ArmoredOutputStream(outStream);
-        armorOut.setHeader("Version", FULL_VERSION);
+        armorOut.setHeader("Version", getFullVersion(context));
 
         PGPSecretKey signingKey = null;
         PGPSecretKeyRing signingKeyRing = null;
