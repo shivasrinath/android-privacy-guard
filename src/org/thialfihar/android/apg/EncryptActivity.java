@@ -586,7 +586,7 @@ public class EncryptActivity extends BaseActivity {
             } else {
                 String message = mMessage.getText().toString();
 
-                if (signOnly && mReturnResult) {
+                if (signOnly && !mReturnResult) {
                     // fix the message a bit, trailing spaces and newlines break stuff,
                     // because GMail sends as HTML and such things fuck up the signature,
                     // TODO: things like "<" and ">" also fuck up the signature
