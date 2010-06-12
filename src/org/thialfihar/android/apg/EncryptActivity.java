@@ -597,6 +597,10 @@ public class EncryptActivity extends BaseActivity {
                     message = message.replaceFirst("\n*$", "\n");
                 }
 
+                if (signOnly && !message.endsWith("\n")) {
+                    message += '\n';
+                }
+
                 byte[] byteData = Strings.toUTF8ByteArray(message);
                 in = new ByteArrayInputStream(byteData);
                 out = new ByteArrayOutputStream();
