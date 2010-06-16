@@ -152,7 +152,6 @@ public class Apg {
             Uri.parse("content://" + AUTHORITY + "/key_rings/public/emails/");
 
     private static String VERSION = null;
-    private static String FULL_VERSION = null;
 
     private static final int[] PREFERRED_SYMMETRIC_ALGORITHMS =
             new int[] {
@@ -1853,9 +1852,6 @@ public class Apg {
     }
 
     public static String getFullVersion(Context context) {
-        if (FULL_VERSION == null) {
-            FULL_VERSION = "APG v" + getVersion(context);
-        }
-        return FULL_VERSION;
+        return "APG v" + getVersion(context);
     }
 }
