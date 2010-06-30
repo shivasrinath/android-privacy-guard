@@ -12,7 +12,7 @@
      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
      See the License for the specific language governing permissions and
      limitations under the License.
-     
+
      Author: 359 <359@siol.com>
 -->
 
@@ -64,11 +64,7 @@
     <string name="btn_doNotSave">Prekliči</string>
     <string name="btn_delete">Izbriši</string>
     <string name="btn_noDate">Brez</string>
-<<<<<<< HEAD
-    <string name="btn_clearFilter">Clear Filter</string>
-=======
     <string name="btn_clearFilter">Umakni filtriranje</string>
->>>>>>> trunk
 
     <!-- menu_lowerCase: capitalized words, no punctuation -->
     <string name="menu_about">O programu</string>
@@ -85,11 +81,7 @@
     <string name="menu_deleteKey">Izbriši ključ</string>
     <string name="menu_createKey">Ustvari ključ</string>
     <string name="menu_editKey">Uredi ključ</string>
-<<<<<<< HEAD
-    <string name="menu_search">Search</string>
-=======
     <string name="menu_search">Išči</string>
->>>>>>> trunk
 
     <!-- label_lowerCase: capitalized words, no punctuation -->
     <string name="label_sign">Podpiši</string>

@@ -255,15 +255,5 @@
     <string name="hint_secretKeys">Search Secret Keys</string>
     <string name="filterInfo">Filter: \"%s\"</string>
 
-    <!-- action strings -->
-    <string name="action_encrypt">Encrypt</string>
-    <string name="action_decrypt">Decrypt</string>
-    <string name="action_importPublic">Import Public Keys</string>
-    <string name="action_importSecret">Import Secret Keys</string>
-
-    <string name="hint_publicKeys">Search Public Keys</string>
-    <string name="hint_secretKeys">Search Secret Keys</string>
-    <string name="filterInfo">Filter: \"%s\"</string>
-
 </resources>
 
