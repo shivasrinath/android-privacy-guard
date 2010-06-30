@@ -90,6 +90,7 @@ import org.thialfihar.android.apg.utils.IterableIterator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -1836,19 +1837,14 @@ public class Apg {
         if (VERSION != null) {
             return VERSION;
         }
-        List<PackageInfo> packs = context.getPackageManager().getInstalledPackages(0);
-        for (int i = 0; i < packs.size(); ++i) {
-            PackageInfo p = packs.get(i);
-            if (!p.packageName.equals(mApgPackageName)) {
-                continue;
-            }
-
-            VERSION = p.versionName;
+        try {
+            PackageInfo pi = context.getPackageManager().getPackageInfo(mApgPackageName, 0);
+            VERSION = pi.versionName;
             return VERSION;
+        } catch (NameNotFoundException e) {
+            // unpossible!
+            return "0.0.0";
         }
-
-        // unpossible!
-        return "0.0.0";
     }
 
     public static String getFullVersion(Context context) {
