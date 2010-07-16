@@ -37,7 +37,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -158,25 +157,6 @@ public class Apg {
     public static final Uri CONTENT_URI_PUBLIC_KEY_RING_BY_EMAILS =
             Uri.parse("content://" + AUTHORITY + "/key_rings/public/emails/");
 
-<<<<<<< HEAD
-    public static final String AUTHORITY = DataProvider.AUTHORITY;
-
-    public static final Uri CONTENT_URI_SECRET_KEY_RINGS =
-            Uri.parse("content://" + AUTHORITY + "/key_rings/secret/");
-    public static final Uri CONTENT_URI_SECRET_KEY_RING_BY_KEY_ID =
-            Uri.parse("content://" + AUTHORITY + "/key_rings/secret/key_id/");
-    public static final Uri CONTENT_URI_SECRET_KEY_RING_BY_EMAILS =
-            Uri.parse("content://" + AUTHORITY + "/key_rings/secret/emails/");
-
-    public static final Uri CONTENT_URI_PUBLIC_KEY_RINGS =
-            Uri.parse("content://" + AUTHORITY + "/key_rings/public/");
-    public static final Uri CONTENT_URI_PUBLIC_KEY_RING_BY_KEY_ID =
-            Uri.parse("content://" + AUTHORITY + "/key_rings/public/key_id/");
-    public static final Uri CONTENT_URI_PUBLIC_KEY_RING_BY_EMAILS =
-            Uri.parse("content://" + AUTHORITY + "/key_rings/public/emails/");
-
-=======
->>>>>>> trunk
     private static String VERSION = null;
 
     private static final int[] PREFERRED_SYMMETRIC_ALGORITHMS =
