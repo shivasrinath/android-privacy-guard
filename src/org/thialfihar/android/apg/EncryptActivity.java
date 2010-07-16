@@ -16,13 +16,9 @@
 
 package org.thialfihar.android.apg;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -34,8 +30,6 @@ import org.bouncycastle2.openpgp.PGPPublicKey;
 import org.bouncycastle2.openpgp.PGPPublicKeyRing;
 import org.bouncycastle2.openpgp.PGPSecretKey;
 import org.bouncycastle2.openpgp.PGPSecretKeyRing;
-import org.bouncycastle2.util.Strings;
-import org.thialfihar.android.apg.Apg.GeneralException;
 import org.thialfihar.android.apg.utils.Choice;
 
 import android.app.Dialog;
@@ -43,7 +37,6 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Message;
 import android.text.ClipboardManager;
 import android.view.View;
@@ -99,6 +92,14 @@ public class EncryptActivity extends BaseActivity {
 
     private String mInputFilename = null;
     private String mOutputFilename = null;
+
+    private boolean mAsciiArmourDemand = false;
+    private boolean mOverrideAsciiArmour = false;
+    private Uri mContentUri = null;
+    private byte[] mData = null;
+
+    private DataSource mDataSource = null;
+    private DataDestination mDataDestination = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -203,10 +204,11 @@ public class EncryptActivity extends BaseActivity {
 
         mFileCompression = (Spinner) findViewById(R.id.fileCompression);
         Choice[] choices = new Choice[] {
-                new Choice(Id.choice.compression.none, getString(R.string.choice_none)),
-                new Choice(Id.choice.compression.zip, "ZIP"),
-                new Choice(Id.choice.compression.bzip2, "BZIP2"),
-                new Choice(Id.choice.compression.zlib, "ZLIB"),
+                new Choice(Id.choice.compression.none, getString(R.string.choice_none) +
+                                                       " (" + getString(R.string.fast) + ")"),
+                new Choice(Id.choice.compression.zip, "ZIP (" + getString(R.string.fast) + ")"),
+                new Choice(Id.choice.compression.zlib, "ZLIB (" + getString(R.string.fast) + ")"),
+                new Choice(Id.choice.compression.bzip2, "BZIP2 (" + getString(R.string.very_slow) + ")"),
         };
         ArrayAdapter<Choice> adapter =
                 new ArrayAdapter<Choice>(this, android.R.layout.simple_spinner_item, choices);
@@ -270,6 +272,7 @@ public class EncryptActivity extends BaseActivity {
         if (Apg.Intent.ENCRYPT.equals(mIntent.getAction()) ||
             Apg.Intent.ENCRYPT_FILE.equals(mIntent.getAction()) ||
             Apg.Intent.ENCRYPT_AND_RETURN.equals(mIntent.getAction())) {
+            mContentUri = mIntent.getData();
             Bundle extras = mIntent.getExtras();
             if (extras == null) {
                 extras = new Bundle();
@@ -279,7 +282,17 @@ public class EncryptActivity extends BaseActivity {
                 mReturnResult = true;
             }
 
-            String data = extras.getString(Apg.EXTRA_TEXT);
+            if (extras.containsKey(Apg.EXTRA_ASCII_ARMOUR)) {
+                mAsciiArmourDemand = extras.getBoolean(Apg.EXTRA_ASCII_ARMOUR, true);
+                mOverrideAsciiArmour = true;
+                mAsciiArmour.setChecked(mAsciiArmourDemand);
+            }
+
+            mData = extras.getByteArray(Apg.EXTRA_DATA);
+            String textData = null;
+            if (mData == null) {
+                textData = extras.getString(Apg.EXTRA_TEXT);
+            }
             mSendTo = extras.getString(Apg.EXTRA_SEND_TO);
             mSubject = extras.getString(Apg.EXTRA_SUBJECT);
             long signatureKeyId = extras.getLong(Apg.EXTRA_SIGNATURE_KEY_ID);
@@ -326,8 +339,8 @@ public class EncryptActivity extends BaseActivity {
 
             if (Apg.Intent.ENCRYPT.equals(mIntent.getAction()) ||
                 Apg.Intent.ENCRYPT_AND_RETURN.equals(mIntent.getAction())) {
-                if (data != null) {
-                    mMessage.setText(data);
+                if (textData != null) {
+                    mMessage.setText(textData);
                 }
                 mSource.setInAnimation(null);
                 mSource.setOutAnimation(null);
@@ -470,12 +483,14 @@ public class EncryptActivity extends BaseActivity {
                 return;
             }
 
-            File file = new File(mInputFilename);
-            if (!file.exists() || !file.isFile()) {
-                Toast.makeText(this, getString(R.string.errorMessage,
-                                               getString(R.string.error_fileNotFound)),
-                               Toast.LENGTH_SHORT).show();
-                return;
+            if (!mInputFilename.startsWith("content")) {
+                File file = new File(mInputFilename);
+                if (!file.exists() || !file.isFile()) {
+                    Toast.makeText(this, getString(R.string.errorMessage,
+                                                   getString(R.string.error_fileNotFound)),
+                                   Toast.LENGTH_SHORT).show();
+                    return;
+                }
             }
         }
 
@@ -545,11 +560,11 @@ public class EncryptActivity extends BaseActivity {
         String error = null;
         Bundle data = new Bundle();
         Message msg = new Message();
-
+        fillDataSource();
+        fillDataDestination();
         try {
-            InputStream in;
+            InputData in;
             OutputStream out;
-            long size;
             boolean useAsciiArmour = true;
             long encryptionKeyIds[] = null;
             long signatureKeyId = 0;
@@ -568,46 +583,20 @@ public class EncryptActivity extends BaseActivity {
                 signOnly = (mEncryptionKeyIds == null || mEncryptionKeyIds.length == 0);
             }
 
+            // streams
+            in = mDataSource.getInputData(this, true);
+            out = mDataDestination.getOutputStream(this);
+
             if (mEncryptTarget == Id.target.file) {
-                if (mInputFilename.startsWith(Environment.getExternalStorageDirectory().getAbsolutePath()) ||
-                    mOutputFilename.startsWith(Environment.getExternalStorageDirectory().getAbsolutePath())) {
-                    if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                        throw new GeneralException(getString(R.string.error_externalStorageNotReady));
-                    }
-                }
-
-                in = new FileInputStream(mInputFilename);
-                out = new FileOutputStream(mOutputFilename);
-
-                File file = new File(mInputFilename);
-                size = file.length();
                 useAsciiArmour = mAsciiArmour.isChecked();
                 compressionId = ((Choice) mFileCompression.getSelectedItem()).getId();
             } else {
-                String message = mMessage.getText().toString();
-
-                if (signOnly && !mReturnResult) {
-                    // fix the message a bit, trailing spaces and newlines break stuff,
-                    // because GMail sends as HTML and such things fuck up the signature,
-                    // TODO: things like "<" and ">" also fuck up the signature
-                    message = message.replaceAll(" +\n", "\n");
-                    message = message.replaceAll("\n\n+", "\n\n");
-                    message = message.replaceFirst("^\n+", "");
-                    // make sure there'll be exactly one newline at the end
-                    message = message.replaceFirst("\n*$", "\n");
-                }
-
-                if (signOnly && !message.endsWith("\n")) {
-                    message += '\n';
-                }
-
-                byte[] byteData = Strings.toUTF8ByteArray(message);
-                in = new ByteArrayInputStream(byteData);
-                out = new ByteArrayOutputStream();
-
-                size = byteData.length;
                 useAsciiArmour = true;
                 compressionId = mPreferences.getDefaultMessageCompression();
+            }
+
+            if (mOverrideAsciiArmour) {
+                useAsciiArmour = mAsciiArmourDemand;
             }
 
             if (signOnly) {
@@ -615,7 +604,7 @@ public class EncryptActivity extends BaseActivity {
                              Apg.getCachedPassPhrase(getSecretKeyId()),
                              mPreferences.getDefaultHashAlgorithm(), this);
             } else {
-                Apg.encrypt(this, in, out, size, useAsciiArmour,
+                Apg.encrypt(this, in, out, useAsciiArmour,
                             encryptionKeyIds, signatureKeyId,
                             Apg.getCachedPassPhrase(signatureKeyId), this,
                             mPreferences.getDefaultEncryptionAlgorithm(),
@@ -625,8 +614,13 @@ public class EncryptActivity extends BaseActivity {
 
             out.close();
             if (mEncryptTarget != Id.target.file) {
-                data.putString(Apg.EXTRA_ENCRYPTED_MESSAGE,
-                               new String(((ByteArrayOutputStream)out).toByteArray()));
+                if (useAsciiArmour) {
+                    data.putString(Apg.EXTRA_ENCRYPTED_MESSAGE,
+                                   new String(((ByteArrayOutputStream)out).toByteArray()));
+                } else {
+                    data.putByteArray(Apg.EXTRA_ENCRYPTED_DATA,
+                                      ((ByteArrayOutputStream)out).toByteArray());
+                }
             }
         } catch (IOException e) {
             error = "" + e;
@@ -874,5 +868,32 @@ public class EncryptActivity extends BaseActivity {
         }
 
         return super.onCreateDialog(id);
+    }
+
+    protected void fillDataSource() {
+        mDataSource = new DataSource();
+        if (mContentUri != null) {
+            mDataSource.setUri(mContentUri);
+        } else if (mEncryptTarget == Id.target.file) {
+            mDataSource.setUri(mInputFilename);
+        } else {
+            if (mData != null) {
+                mDataSource.setData(mData);
+            } else {
+                mDataSource.setText(mMessage.getText().toString());
+            }
+        }
+    }
+
+    protected void fillDataDestination() {
+        mDataDestination = new DataDestination();
+        if (mContentUri != null) {
+            mDataDestination.setMode(Id.mode.stream);
+        } else if (mEncryptTarget == Id.target.file) {
+            mDataDestination.setFilename(mOutputFilename);
+            mDataDestination.setMode(Id.mode.file);
+        } else {
+            mDataDestination.setMode(Id.mode.byte_array);
+        }
     }
 }
