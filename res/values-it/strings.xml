@@ -27,7 +27,7 @@
     <string name="title_selectSignature">Seleziona Firma</string>
     <string name="title_encrypt">Critta</string>
     <string name="title_decrypt">Decritta</string>
-    <string name="title_authentification">Autenticazione</string>
+    <string name="title_authentication">Pass Phrase</string>
     <string name="title_createKey">Crea Chiave</string>
     <string name="title_editKey">Modifica Chiave</string>
     <string name="title_preferences">Preferenze</string>
@@ -50,7 +50,7 @@
 
     <!-- btn_lowerCase: capitalized words, no punctuation -->
     <string name="btn_encryptToClipboard">Critta su Clipboard</string>
-    <string name="btn_send">Critta ed invia per mail</string>
+    <string name="btn_encryptAndEmail">Critta ed invia per mail</string>
     <string name="btn_encrypt">Critta</string>
     <string name="btn_decrypt">Decritta</string>
     <string name="btn_verify">Verifica</string>
@@ -65,6 +65,8 @@
     <string name="btn_delete">Cancella</string>
     <string name="btn_noDate">Nessuno</string>
     <string name="btn_clearFilter">Cancella Filtro</string>
+    <string name="btn_changePassPhrase">Cambia Pass Phrase</string>
+    <string name="btn_setPassPhrase">Imposta Pass Phrase</string>
 
     <!-- menu_lowerCase: capitalized words, no punctuation -->
     <string name="menu_about">Informazioni</string>
@@ -73,8 +75,6 @@
     <string name="menu_managePublicKeys">Gestisci Chiavi Pubbliche</string>
     <string name="menu_manageSecretKeys">Gestisci Chiavi Private</string>
     <string name="menu_preferences">Impostazioni</string>
-    <string name="menu_changePassPhrase">Cambia Pass Phrase</string>
-    <string name="menu_setPassPhrase">Imposta Pass Phrase</string>
     <string name="menu_importKeys">Importa Chiavi</string>
     <string name="menu_exportKeys">Esporta Chiavi</string>
     <string name="menu_exportKey">Esporta Chiave</string>
@@ -148,12 +148,12 @@
     <string name="wrongPassPhrase">Pass Phrase errata.</string>
     <string name="usingClipboardContent">Utilizza il contenuto della clipboard.</string>
     <string name="keySaved">Chiave salvata..</string>
-    <string name="setAPassPhrase">Imposta prima una Pass Phrase tramite il menù Opzioni.</string>
+    <string name="setAPassPhrase">Imposta prima una Pass Phrase.</string>
     <string name="noFilemanagerInstalled">Nessun file manager compatibile installato.</string>
     <string name="passPhrasesDoNotMatch">La Pass Phrase non è corretta</string>
     <string name="passPhraseMustNotBeEmpty">La Pass Phrases non può essere vuota.</string>
-    <string name="passPhraseForSymmetricEncryption">Pass Phrase per la crittazione simmetrica:</string>
-    <string name="passPhraseFor">Pass Phrase per %s:</string>
+    <string name="passPhraseForSymmetricEncryption">Crittazione simmetrica.</string>
+    <string name="passPhraseFor">%s</string>
     <string name="fileDeleteConfirmation">Sei sicuro di procedere con la cancellazione di\n%s?</string>
     <string name="fileDeleteSuccessful">Cancellazione eseguita..</string>
     <string name="noFileSelected">Selezionare un file.</string>
@@ -168,7 +168,7 @@
     <string name="specifyGoogleMailAccount">Specificare l\'acconto Google Mail che si vuole aggiungere.</string>
     <string name="specifyFileToImportFrom">Specificare il file da cui importare le chiavi (.asc or .gpg).</string>
     <string name="specifyFileToExportTo">Specificare il file per l\'esportazione.\nATTENZIONE! Se il file esiste, sarà sovrascritto.</string>
-    <string name="specifyFileToExportSecretKeysTo">Specificare il file per l'\esportazione.\nATTENZIONE! Stai esportando la chiave privata.\nATTENZIONE! Se il file esiste, sarà sovrascritto.</string>
+    <string name="specifyFileToExportSecretKeysTo">Specificare il file per l\'esportazione.\nATTENZIONE! Stai esportando la chiave privata.\nATTENZIONE! Se il file esiste, sarà sovrascritto.</string>
     <string name="keyDeletionConfirmation">Confermi la cancellazione della chiave \'%s\'?\nL\'operazione è irreversibile!</string>
     <string name="secretKeyDeletionConfirmation">Confermi la cancellazione della chiave PRIVATA \'%s\'?\nL\'operazione è irreversibile!</string>
     <string name="keysAddedAndUpdated">Sono state correttamente inserite %s chiavi ed aggiornate %s chiavi."</string>

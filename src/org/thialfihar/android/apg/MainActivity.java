@@ -16,6 +16,9 @@
 
 package org.thialfihar.android.apg;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.thialfihar.android.apg.provider.Accounts;
 
 import android.app.AlertDialog;
@@ -28,6 +31,8 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.util.Linkify;
+import android.text.util.Linkify.TransformFilter;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -117,6 +122,10 @@ public class MainActivity extends BaseActivity {
         });
         registerForContextMenu(mAccounts);
 
+        if (!mPreferences.hasSeenHelp()) {
+            showDialog(Id.dialog.help);
+        }
+
         if (!mPreferences.hasSeenChangeLog(Apg.getVersion(this))) {
             showDialog(Id.dialog.change_log);
         }
@@ -131,8 +140,12 @@ public class MainActivity extends BaseActivity {
                 alert.setTitle(R.string.title_addAccount);
                 alert.setMessage(R.string.specifyGoogleMailAccount);
 
-                final EditText input = new EditText(this);
-                alert.setView(input);
+                LayoutInflater inflater =
+                        (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                View view = (View) inflater.inflate(R.layout.add_account_dialog, null);
+
+                final EditText input = (EditText) view.findViewById(R.id.input);
+                alert.setView(view);
 
                 alert.setPositiveButton(android.R.string.ok,
                         new DialogInterface.OnClickListener() {
@@ -140,15 +153,23 @@ public class MainActivity extends BaseActivity {
                                 MainActivity.this.removeDialog(Id.dialog.new_account);
                                 String accountName = "" + input.getText();
 
-                                Cursor testCursor =
-                                        managedQuery(Uri.parse("content://gmail-ls/conversations/" +
-                                                               accountName),
-                                                     null, null, null, null);
-                                if (testCursor == null) {
+                                try {
+                                    Cursor testCursor =
+                                            managedQuery(Uri.parse("content://gmail-ls/conversations/" +
+                                                                   accountName),
+                                                         null, null, null, null);
+                                    if (testCursor == null) {
+                                        Toast.makeText(MainActivity.this,
+                                                       getString(R.string.errorMessage,
+                                                                 getString(R.string.error_accountNotFound,
+                                                                           accountName)),
+                                                       Toast.LENGTH_SHORT).show();
+                                        return;
+                                    }
+                                } catch (SecurityException e) {
                                     Toast.makeText(MainActivity.this,
                                                    getString(R.string.errorMessage,
-                                                             getString(R.string.error_accountNotFound,
-                                                                       accountName)),
+                                                             getString(R.string.error_accountReadingNotAllowed)),
                                                    Toast.LENGTH_SHORT).show();
                                     return;
                                 }
@@ -189,20 +210,13 @@ public class MainActivity extends BaseActivity {
                 View layout = inflater.inflate(R.layout.info, null);
                 TextView message = (TextView) layout.findViewById(R.id.message);
 
-                message.setText("Read the warnings!\n\n" +
-                                "Changes:\n" +
-                                "* k9mail integration, k9mail beta build is available on the k9mail website\n" +
-                                "* German and Italian translation (thanks, cwoehrl and Fabrizio)\n" +
-                                "* new preferences GUI\n" +
-                                "* much smaller package\n" +
-                                "* signature bugfix\n" +
+                message.setText("Changes:\n" +
+                                "* \n" +
                                 "\n" +
                                 "WARNING: be careful editing your existing keys, as they " +
                                 "WILL be stripped of certificates right now.\n" +
                                 "\n" +
-                                "WARNING: key creation/editing doesn't support all " +
-                                "GPG features yet. In particular: " +
-                                "key cross-certification is NOT supported, so signing " +
+                                "Also: key cross-certification is NOT supported, so signing " +
                                 "with those keys will get a warning when the signature is " +
                                 "checked.\n" +
                                 "\n" +
@@ -223,6 +237,48 @@ public class MainActivity extends BaseActivity {
                 return alert.create();
             }
 
+            case Id.dialog.help: {
+                AlertDialog.Builder alert = new AlertDialog.Builder(this);
+
+                alert.setTitle(R.string.title_help);
+
+                LayoutInflater inflater =
+                        (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                View layout = inflater.inflate(R.layout.info, null);
+                TextView message = (TextView) layout.findViewById(R.id.message);
+                message.setText(R.string.text_help);
+
+                TransformFilter packageNames = new TransformFilter() {
+                    public final String transformUrl(final Matcher match, String url) {
+                        String name = match.group(1).toLowerCase();
+                        if (name.equals("astro")) {
+                            return "com.metago.astro";
+                        } else if (name.equals("k-9 mail")) {
+                            return "com.fsck.k9";
+                        } else {
+                            return "org.openintents.filemanager";
+                        }
+                    }
+                };
+
+                Pattern pattern = Pattern.compile("(OI File Manager|ASTRO|K-9 Mail)");
+                String scheme = "market://search?q=pname:";
+                message.setAutoLinkMask(0);
+                Linkify.addLinks(message, pattern, scheme, null, packageNames);
+
+                alert.setView(layout);
+
+                alert.setPositiveButton(android.R.string.ok,
+                                        new DialogInterface.OnClickListener() {
+                                            public void onClick(DialogInterface dialog, int id) {
+                                                MainActivity.this.removeDialog(Id.dialog.help);
+                                                mPreferences.setHasSeenHelp(true);
+                                            }
+                                        });
+
+                return alert.create();
+            }
+
             default: {
                 return super.onCreateDialog(id);
             }
@@ -231,16 +287,18 @@ public class MainActivity extends BaseActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(0, Id.menu.option.create, 0, R.string.menu_addAccount)
-                .setIcon(android.R.drawable.ic_menu_add);
-        menu.add(1, Id.menu.option.manage_public_keys, 1, R.string.menu_managePublicKeys)
+        menu.add(0, Id.menu.option.manage_public_keys, 0, R.string.menu_managePublicKeys)
                 .setIcon(android.R.drawable.ic_menu_manage);
-        menu.add(1, Id.menu.option.manage_secret_keys, 2, R.string.menu_manageSecretKeys)
+        menu.add(0, Id.menu.option.manage_secret_keys, 1, R.string.menu_manageSecretKeys)
                 .setIcon(android.R.drawable.ic_menu_manage);
+        menu.add(1, Id.menu.option.create, 2, R.string.menu_addAccount)
+        .setIcon(android.R.drawable.ic_menu_add);
         menu.add(2, Id.menu.option.preferences, 3, R.string.menu_preferences)
                 .setIcon(android.R.drawable.ic_menu_preferences);
         menu.add(2, Id.menu.option.about, 4, R.string.menu_about)
                 .setIcon(android.R.drawable.ic_menu_info_details);
+        menu.add(22, Id.menu.option.help, 4, R.string.menu_help)
+                .setIcon(android.R.drawable.ic_menu_help);
         return true;
     }
 
@@ -259,6 +317,11 @@ public class MainActivity extends BaseActivity {
 
             case Id.menu.option.manage_secret_keys: {
                 startActivity(new Intent(this, SecretKeyListActivity.class));
+                return true;
+            }
+
+            case Id.menu.option.help: {
+                showDialog(Id.dialog.help);
                 return true;
             }
 

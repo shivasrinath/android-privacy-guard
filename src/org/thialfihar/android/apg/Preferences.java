@@ -23,6 +23,16 @@ public class Preferences {
         mSharedPreferences = context.getSharedPreferences("APG.main", Context.MODE_PRIVATE);
     }
 
+    public String getLanguage() {
+        return mSharedPreferences.getString(Constants.pref.language, "");
+    }
+
+    public void setLanguage(String value) {
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        editor.putString(Constants.pref.language, value);
+        editor.commit();
+    }
+
     public int getPassPhraseCacheTtl() {
         int ttl = mSharedPreferences.getInt(Constants.pref.pass_phrase_cache_ttl, 180);
         // fix the value if it was set to "never" in previous versions, which currently is not
@@ -93,6 +103,16 @@ public class Preferences {
         editor.commit();
     }
 
+    public boolean getForceV3Signatures() {
+        return mSharedPreferences.getBoolean(Constants.pref.force_v3_signatures, false);
+    }
+
+    public void setForceV3Signatures(boolean value) {
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        editor.putBoolean(Constants.pref.force_v3_signatures, value);
+        editor.commit();
+    }
+
     public boolean hasSeenChangeLog(String version) {
         return mSharedPreferences.getBoolean(Constants.pref.has_seen_change_log + version,
                                        false);
@@ -101,6 +121,16 @@ public class Preferences {
     public void setHasSeenChangeLog(String version, boolean value) {
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         editor.putBoolean(Constants.pref.has_seen_change_log + version, value);
+        editor.commit();
+    }
+
+    public boolean hasSeenHelp() {
+        return mSharedPreferences.getBoolean(Constants.pref.has_seen_help, false);
+    }
+
+    public void setHasSeenHelp(boolean value) {
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        editor.putBoolean(Constants.pref.has_seen_help, value);
         editor.commit();
     }
 }

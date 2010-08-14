@@ -24,6 +24,7 @@ public final class Constants {
     }
 
     public static final class pref {
+        public static final String has_seen_help = "seenHelp";
         public static final String has_seen_change_log = "seenChangeLogDialog";
         public static final String default_encryption_algorithm = "defaultEncryptionAlgorithm";
         public static final String default_hash_algorithm = "defaultHashAlgorithm";
@@ -31,5 +32,7 @@ public final class Constants {
         public static final String default_message_compression = "defaultMessageCompression";
         public static final String default_file_compression = "defaultFileCompression";
         public static final String pass_phrase_cache_ttl = "passPhraseCacheTtl";
+        public static final String language = "language";
+        public static final String force_v3_signatures = "forceV3Signatures";
     }
 }

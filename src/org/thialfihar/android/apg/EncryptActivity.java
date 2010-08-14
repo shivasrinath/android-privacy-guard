@@ -376,11 +376,9 @@ public class EncryptActivity extends BaseActivity {
 
             mSourceLabel.setClickable(false);
             mSourceLabel.setEnabled(false);
-
-            mEncryptToClipboardButton.setEnabled(false);
-            mEncryptToClipboardButton.setVisibility(View.INVISIBLE);
-            mEncryptButton.setText(R.string.btn_encrypt);
         }
+
+        updateButtons();
 
         if (mReturnResult &&
             mMessage.getText().length() > 0 &&
@@ -419,17 +417,77 @@ public class EncryptActivity extends BaseActivity {
         switch (mSource.getCurrentView().getId()) {
             case R.id.sourceFile: {
                 mSourceLabel.setText(R.string.label_file);
-                mEncryptButton.setText(R.string.btn_encrypt);
-                mEncryptToClipboardButton.setEnabled(false);
-                mEncryptToClipboardButton.setVisibility(View.INVISIBLE);
                 break;
             }
 
             case R.id.sourceMessage: {
                 mSourceLabel.setText(R.string.label_message);
-                mEncryptButton.setText(R.string.btn_send);
-                mEncryptToClipboardButton.setEnabled(true);
-                mEncryptToClipboardButton.setVisibility(View.VISIBLE);
+                break;
+            }
+
+            default: {
+                break;
+            }
+        }
+        updateButtons();
+    }
+
+    private void updateButtons() {
+        switch (mSource.getCurrentView().getId()) {
+            case R.id.sourceFile: {
+                mEncryptToClipboardButton.setVisibility(View.INVISIBLE);
+                mEncryptButton.setText(R.string.btn_encrypt);
+                break;
+            }
+
+            case R.id.sourceMessage: {
+                mSourceLabel.setText(R.string.label_message);
+                if (mReturnResult) {
+                    mEncryptToClipboardButton.setVisibility(View.INVISIBLE);
+                } else {
+                    mEncryptToClipboardButton.setVisibility(View.VISIBLE);
+                }
+                if (mMode.getCurrentView().getId() == R.id.modeSymmetric) {
+                    if (mReturnResult) {
+                        mEncryptButton.setText(R.string.btn_encrypt);
+                    } else {
+                        mEncryptButton.setText(R.string.btn_encryptAndEmail);
+                    }
+                    mEncryptButton.setEnabled(true);
+                    mEncryptToClipboardButton.setText(R.string.btn_encryptToClipboard);
+                    mEncryptToClipboardButton.setEnabled(true);
+                } else {
+                    if (mEncryptionKeyIds == null || mEncryptionKeyIds.length == 0) {
+                        if (getSecretKeyId() == 0) {
+                            if (mReturnResult) {
+                                mEncryptButton.setText(R.string.btn_encrypt);
+                            } else {
+                                mEncryptButton.setText(R.string.btn_encryptAndEmail);
+                            }
+                            mEncryptButton.setEnabled(false);
+                            mEncryptToClipboardButton.setText(R.string.btn_encryptToClipboard);
+                            mEncryptToClipboardButton.setEnabled(false);
+                        } else {
+                            if (mReturnResult) {
+                                mEncryptButton.setText(R.string.btn_sign);
+                            } else {
+                                mEncryptButton.setText(R.string.btn_signAndEmail);
+                            }
+                            mEncryptButton.setEnabled(true);
+                            mEncryptToClipboardButton.setText(R.string.btn_signToClipboard);
+                            mEncryptToClipboardButton.setEnabled(true);
+                        }
+                    } else {
+                        if (mReturnResult) {
+                            mEncryptButton.setText(R.string.btn_encrypt);
+                        } else {
+                            mEncryptButton.setText(R.string.btn_encryptAndEmail);
+                        }
+                        mEncryptButton.setEnabled(true);
+                        mEncryptToClipboardButton.setText(R.string.btn_encryptToClipboard);
+                        mEncryptToClipboardButton.setEnabled(true);
+                    }
+                }
                 break;
             }
 
@@ -455,6 +513,7 @@ public class EncryptActivity extends BaseActivity {
                 break;
             }
         }
+        updateButtons();
     }
 
     private void encryptToClipboardClicked() {
@@ -560,16 +619,15 @@ public class EncryptActivity extends BaseActivity {
         String error = null;
         Bundle data = new Bundle();
         Message msg = new Message();
-        fillDataSource();
-        fillDataDestination();
+
         try {
             InputData in;
             OutputStream out;
             boolean useAsciiArmour = true;
             long encryptionKeyIds[] = null;
             long signatureKeyId = 0;
-            boolean signOnly = false;
             int compressionId = 0;
+            boolean signOnly = false;
 
             String passPhrase = null;
             if (mMode.getCurrentView().getId() == R.id.modeSymmetric) {
@@ -582,6 +640,9 @@ public class EncryptActivity extends BaseActivity {
                 signatureKeyId = getSecretKeyId();
                 signOnly = (mEncryptionKeyIds == null || mEncryptionKeyIds.length == 0);
             }
+
+            fillDataSource(signOnly && !mReturnResult);
+            fillDataDestination();
 
             // streams
             in = mDataSource.getInputData(this, true);
@@ -602,14 +663,18 @@ public class EncryptActivity extends BaseActivity {
             if (signOnly) {
                 Apg.signText(this, in, out, getSecretKeyId(),
                              Apg.getCachedPassPhrase(getSecretKeyId()),
-                             mPreferences.getDefaultHashAlgorithm(), this);
+                             mPreferences.getDefaultHashAlgorithm(),
+                             mPreferences.getForceV3Signatures(),
+                             this);
             } else {
                 Apg.encrypt(this, in, out, useAsciiArmour,
                             encryptionKeyIds, signatureKeyId,
                             Apg.getCachedPassPhrase(signatureKeyId), this,
                             mPreferences.getDefaultEncryptionAlgorithm(),
                             mPreferences.getDefaultHashAlgorithm(),
-                            compressionId, passPhrase);
+                            compressionId,
+                            mPreferences.getForceV3Signatures(),
+                            passPhrase);
             }
 
             out.close();
@@ -679,6 +744,8 @@ public class EncryptActivity extends BaseActivity {
             mMainUserIdRest.setText(uidExtra);
             mSign.setChecked(true);
         }
+
+        updateButtons();
     }
 
     private void selectPublicKeys() {
@@ -779,8 +846,7 @@ public class EncryptActivity extends BaseActivity {
         Bundle data = msg.getData();
         String error = data.getString(Apg.EXTRA_ERROR);
         if (error != null) {
-            Toast.makeText(EncryptActivity.this,
-                           getString(R.string.errorMessage, error), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.errorMessage, error), Toast.LENGTH_SHORT).show();
             return;
         }
         switch (mEncryptTarget) {
@@ -844,9 +910,8 @@ public class EncryptActivity extends BaseActivity {
                                         getString(R.string.specifyFileToEncryptTo),
                                         mOutputFilename,
                                         new FileDialog.OnClickListener() {
-
                                             @Override
-                                            public void onOkClick(String filename) {
+                                            public void onOkClick(String filename, boolean checked) {
                                                 removeDialog(Id.dialog.output_filename);
                                                 mOutputFilename = filename;
                                                 encryptStart();
@@ -859,6 +924,7 @@ public class EncryptActivity extends BaseActivity {
                                         },
                                         getString(R.string.filemanager_titleSave),
                                         getString(R.string.filemanager_btnSave),
+                                        null,
                                         Id.request.output_filename);
             }
 
@@ -870,7 +936,7 @@ public class EncryptActivity extends BaseActivity {
         return super.onCreateDialog(id);
     }
 
-    protected void fillDataSource() {
+    protected void fillDataSource(boolean fixContent) {
         mDataSource = new DataSource();
         if (mContentUri != null) {
             mDataSource.setUri(mContentUri);
@@ -880,7 +946,19 @@ public class EncryptActivity extends BaseActivity {
             if (mData != null) {
                 mDataSource.setData(mData);
             } else {
-                mDataSource.setText(mMessage.getText().toString());
+                String message = mMessage.getText().toString();
+                if (fixContent) {
+                    // fix the message a bit, trailing spaces and newlines break stuff,
+                    // because GMail sends as HTML and such things fuck up the
+                    // signature,
+                    // TODO: things like "<" and ">" also fuck up the signature
+                    message = message.replaceAll(" +\n", "\n");
+                    message = message.replaceAll("\n\n+", "\n\n");
+                    message = message.replaceFirst("^\n+", "");
+                    // make sure there'll be exactly one newline at the end
+                    message = message.replaceFirst("\n*$", "\n");
+                }
+                mDataSource.setText(message);
             }
         }
     }

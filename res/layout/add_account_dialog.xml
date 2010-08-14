@@ -22,29 +22,10 @@
     android:paddingLeft="5dip"
     android:paddingRight="5dip">
 
-    <LinearLayout
+    <EditText
+        android:id="@+id/input"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <EditText
-            android:id="@+id/input"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"/>
-
-        <ImageButton
-            android:id="@+id/btn_browse"
-            android:src="@drawable/ic_launcher_folder_small"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:layout_gravity="center_vertical"/>
-
-    </LinearLayout>
-
-    <CheckBox
-        android:id="@+id/checkbox"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"/>
+        android:inputType="textEmailAddress"/>
 
 </LinearLayout>

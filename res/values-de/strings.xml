@@ -27,7 +27,7 @@
     <string name="title_selectSignature">Signatur auswählen</string>
     <string name="title_encrypt">Verschlüsseln</string>
     <string name="title_decrypt">Entschlüsseln</string>
-    <string name="title_authentification">Authentifizierung</string>
+    <string name="title_authentication">Passwort</string>
     <string name="title_createKey">Schlüssel erzeugen</string>
     <string name="title_editKey">Schlüssel bearbeiten</string>
     <string name="title_preferences">Einstellungen</string>
@@ -51,7 +51,7 @@
     <!-- btn_lowerCase: capitalized words, no punctuation -->
 
     <string name="btn_encryptToClipboard">In die Zwischenablage verschlüsseln</string>
-    <string name="btn_send">Verschlüsseln und per Mail senden</string>
+    <string name="btn_encryptAndEmail">Verschlüsseln und per Mail senden</string>
     <string name="btn_encrypt">Verschlüsseln</string>
     <string name="btn_decrypt">Entschlüsseln</string>
     <string name="btn_verify">Verifizieren</string>
@@ -66,6 +66,8 @@
     <string name="btn_delete">Löschen</string>
     <string name="btn_noDate">Niemals</string>
     <string name="btn_clearFilter">Filter zurücksetzen</string>
+    <string name="btn_changePassPhrase">Passwort ändern</string>
+    <string name="btn_setPassPhrase">Passwort wählen</string>
 
     <!-- menu_lowerCase: capitalized words, no punctuation -->
     <string name="menu_about">Über</string>
@@ -74,8 +76,6 @@
     <string name="menu_managePublicKeys">Öffentliche Schlüssel verwalten</string>
     <string name="menu_manageSecretKeys">Private Schlüssel verwalten</string>
     <string name="menu_preferences">Einstellungen</string>
-    <string name="menu_changePassPhrase">Passwort ändern</string>
-    <string name="menu_setPassPhrase">Passwort wählen</string>
     <string name="menu_importKeys">Schlüssel importieren</string>
     <string name="menu_exportKeys">Mehrere Schlüssel exportieren</string>
     <string name="menu_exportKey">Einzelnen Schlüssel exportieren</string>
@@ -154,13 +154,12 @@
 
     <string name="usingClipboardContent">Zwischenablage wird verwendet.</string>
     <string name="keySaved">Schlüssel gespeichert.</string>
-    <string name="setAPassPhrase">Zuerst über Auswahlmenü Passwort festlegen.</string>
+    <string name="setAPassPhrase">Zuerst Passwort festlegen.</string>
     <string name="noFilemanagerInstalled">Kein kompatibler Dateimanager installiert.</string>
     <string name="passPhrasesDoNotMatch">Passwörter stimmen nicht überein.</string>
     <string name="passPhraseMustNotBeEmpty">Leere Passwörter sind unzulässig.</string>
-
-    <string name="passPhraseForSymmetricEncryption">Passwort für symmetrische Verschlüsselung:</string>
-    <string name="passPhraseFor">Passwort für %s:</string>
+    <string name="passPhraseForSymmetricEncryption">Symmetrische Verschlüsselung.</string>
+    <string name="passPhraseFor">%s</string>
     <string name="fileDeleteConfirmation">Soll\n%s wirklich gelöscht werden?</string>
     <string name="fileDeleteSuccessful">Erfolgreich gelöscht.</string>
     <string name="noFileSelected">Zuerst eine Datei auswählen.</string>

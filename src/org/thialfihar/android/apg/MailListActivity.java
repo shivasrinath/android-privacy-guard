@@ -75,17 +75,20 @@ public class MailListActivity extends ListActivity {
         }
     }
 
-    private Vector<Conversation> mconversations;
-    private Vector<Message> mmessages;
+    private Vector<Conversation> mConversations;
+    private Vector<Message> mMessages;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Preferences prefs = Preferences.getPreferences(this);
+        BaseActivity.setLanguage(this, prefs.getLanguage());
+
         super.onCreate(savedInstanceState);
 
         mInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        mconversations = new Vector<Conversation>();
-        mmessages = new Vector<Message>();
+        mConversations = new Vector<Conversation>();
+        mMessages = new Vector<Message>();
 
         String account = getIntent().getExtras().getString(Apg.EXTRA_ACCOUNT);
         // TODO: what if account is null?
@@ -140,10 +143,10 @@ public class MailListActivity extends ListActivity {
                                     data, signedOnly);
 
                 messages.add(message);
-                mmessages.add(message);
+                mMessages.add(message);
             }
             conversation.messages = messages;
-            mconversations.add(conversation);
+            mConversations.add(conversation);
         }
 
         setListAdapter(new MailboxAdapter());
@@ -176,17 +179,17 @@ public class MailListActivity extends ListActivity {
 
         @Override
         public int getCount() {
-            return mmessages.size();
+            return mMessages.size();
         }
 
         @Override
         public Object getItem(int position) {
-            return mmessages.get(position);
+            return mMessages.get(position);
         }
 
         @Override
         public long getItemId(int position) {
-            return mmessages.get(position).id;
+            return mMessages.get(position).id;
         }
 
         @Override
