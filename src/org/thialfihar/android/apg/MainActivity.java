@@ -211,7 +211,13 @@ public class MainActivity extends BaseActivity {
                 TextView message = (TextView) layout.findViewById(R.id.message);
 
                 message.setText("Changes:\n" +
-                                "* \n" +
+                                "* K9 integration: enable APG in the latest K9 version\n" +
+                                "* account adding crash on Froyo fixed\n" +
+                                "* secure file deletion\n" +
+                                "* stream encryption/decryption (gallery, etc.)\n" +
+                                "* new options (language, force v3 signatures)\n" +
+                                "* interface changes\n" +
+                                "* bugfixes\n" +
                                 "\n" +
                                 "WARNING: be careful editing your existing keys, as they " +
                                 "WILL be stripped of certificates right now.\n" +
