@@ -217,7 +217,8 @@ public class MainActivity extends BaseActivity {
                                 "* stream encryption/decryption (gallery, etc.)\n" +
                                 "* new options (language, force v3 signatures)\n" +
                                 "* interface changes\n" +
-                                "* bugfixes\n" +
+                                "* signing bug fixes\n" +
+                                "* other bugfixes\n" +
                                 "\n" +
                                 "WARNING: be careful editing your existing keys, as they " +
                                 "WILL be stripped of certificates right now.\n" +
